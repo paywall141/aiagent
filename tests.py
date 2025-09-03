@@ -6,14 +6,14 @@ import os
 
 def test():
 # getfilesinfo tests
-    print("========TEST 1========")
-    print( get_files_info("calculator", ".") )
-    print("========TEST 2========")
-    print( get_files_info("calculator", "pkg") )
-    print("========TEST 3========")
-    print( get_files_info("calculator", "/bin") )
-    print("========TEST 4========")
-    print( get_files_info("calculator", "../") )
+    # print("========TEST 1========")
+    # print( get_files_info("calculator", ".") )
+    # print("========TEST 2========")
+    # print( get_files_info("calculator", "pkg") )
+    # print("========TEST 3========")
+    # print( get_files_info("calculator", "/bin") )
+    # print("========TEST 4========")
+    # print( get_files_info("calculator", "../") )
 
 # getfilescontent tests
     # print("========TEST 1========")
@@ -24,7 +24,15 @@ def test():
     # print(get_file_content("calculator", "/bin/cat") )
     # print("========TEST 4========")
     # print(get_file_content("calculator", "pkg/does_not_exist.py") )
+
 # writefile tests
+    print("========TEST 1========")
+    print( write_file("calculator", "lorem.txt", "wait, this isn't lorem ipsum") )
+    print("========TEST 2========")
+    print( write_file("calculator", "pkg/morelorem.txt", "lorem ipsum dolor sit amet") )
+    print("========TEST 3========")
+    print( write_file("calculator", "/tmp/temp.txt", "this should not be allowed") )
+
 
 # runpython tests
     # print("========TEST 1========")

@@ -1,19 +1,19 @@
 import os
+from helpers.validators import *
+
 def write_file(working_directory, file_path, content):
     try:
-        fullpath = os.path.abspath(os.path.join(working_directory,file_path ))
-        working_directory_abs = os.path.abspath(working_directory)
-
-        # validate path
-        if not fullpath.startswith(working_directory_abs):
-            return f'Error: Cannot write to "{file_path}" as it is outside the permitted working directory'
+        # validate relative path
+        full_path, err = validate_relative_path( working_directory, file_path, keyword = "write" )
+        if err:
+            return err
 
         # validate file_path exists, build path if not
-        if not os.path.exists(fullpath):
-            os.makedirs(os.path.dirname(fullpath), exist_ok=True)
+        if not validate_path_exists(full_path):
+            os.makedirs(os.path.dirname(full_path), exist_ok=True)
 
         # write content to file at path
-        with open(fullpath, "w") as f:
+        with open(full_path, "w") as f:
             f.write(content)
             return f'Successfully wrote to "{file_path}" ({len(content)} characters written)'
 

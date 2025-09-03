@@ -21,3 +21,6 @@ def validate_is_dir(working_directory, directory):
     if not is_dir:
         return None, f'Error: "{directory}" is not a directory'
     return  is_dir , None
+
+def validate_path_exists(full_path):
+    return os.path.exists(full_path)
