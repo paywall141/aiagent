@@ -26,25 +26,25 @@ def test():
     # print(get_file_content("calculator", "pkg/does_not_exist.py") )
 
 # writefile tests
-    print("========TEST 1========")
-    print( write_file("calculator", "lorem.txt", "wait, this isn't lorem ipsum") )
-    print("========TEST 2========")
-    print( write_file("calculator", "pkg/morelorem.txt", "lorem ipsum dolor sit amet") )
-    print("========TEST 3========")
-    print( write_file("calculator", "/tmp/temp.txt", "this should not be allowed") )
+    # print("========TEST 1========")
+    # print( write_file("calculator", "lorem.txt", "wait, this isn't lorem ipsum") )
+    # print("========TEST 2========")
+    # print( write_file("calculator", "pkg/morelorem.txt", "lorem ipsum dolor sit amet") )
+    # print("========TEST 3========")
+    # print( write_file("calculator", "/tmp/temp.txt", "this should not be allowed") )
 
 
 # runpython tests
-    # print("========TEST 1========")
-    # print( run_python_file("calculator", "main.py") )
-    # print("========TEST 2========")
-    # print( run_python_file("calculator", "main.py", ["3 + 5"]) )
-    # print("========TEST 3========")
-    # print( run_python_file("calculator", "tests.py") )
-    # print("========TEST 4========")
-    # print( run_python_file("calculator", "../main.py") )
-    # print("========TEST 4========")
-    # print( run_python_file("calculator", "nonexistent.py") )
+    print("========TEST 1========")
+    print( run_python_file("calculator", "main.py") )
+    print("========TEST 2========")
+    print( run_python_file("calculator", "main.py", ["3 + 5"]) )
+    print("========TEST 3========")
+    print( run_python_file("calculator", "tests.py") )
+    print("========TEST 4========")
+    print( run_python_file("calculator", "../main.py") )
+    print("========TEST 4========")
+    print( run_python_file("calculator", "nonexistent.py") )
 
 
 if __name__ == "__main__":
