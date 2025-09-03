@@ -19,8 +19,10 @@ def run_python_file(working_directory, file_path, args=[]):
 
         if args is None:
             args = []
-        # Build the command list
+        # Build the args and pass extra args
         cmd = ["uv", "run", fullpath] + args
+
+        # meat of the function
         result = subprocess.run(cmd, capture_output=True, cwd=working_directory, timeout=30, text=True)
         if result.returncode != 0:
             return f"Process exited with code {result.returncode}"

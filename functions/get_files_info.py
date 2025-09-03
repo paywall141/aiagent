@@ -1,17 +1,18 @@
 import os 
+from helpers.validators import *
 
 def get_files_info(working_directory, directory="."):
     try:    
-        full_path = os.path.abspath(os.path.join(working_directory, directory))
-        working_directory_abs = os.path.abspath(working_directory)
-        
-        if not full_path.startswith(working_directory_abs):
-            return f'Error: Cannot list "{directory}" as it is outside the permitted working directory'
+        # validate relative path
+        full_path, err = validate_relative_path( working_directory, directory, keyword = "list" )
+        if err:
+            return err
 
-        is_dir = os.path.isdir(full_path)
-        if not is_dir:
-            return f'Error: "{directory}" is not a directory'
-        
+        # validate is dir
+        is_dir, err = validate_is_dir(working_directory,directory)
+        if err:
+            return err
+
         contents = os.listdir(full_path)
         lines = []
         for content in contents:

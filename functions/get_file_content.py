@@ -1,24 +1,24 @@
 import os
 from config import MAX_CHARS
+from helpers.validators import *
 
 def get_file_content(working_directory, file_path):
-    try:
-        full_path = os.path.abspath(os.path.join(working_directory,file_path))
-        working_directory_abs = os.path.abspath(working_directory)
-        
+    try:       
         # validate relative path
-        if not full_path.startswith(working_directory_abs):
-            return f'Error: Cannot read "{file_path}" as it is outside the permitted working directory'
+        full_path, err = validate_relative_path( working_directory, file_path, keyword = "read" )
+        if err:
+            return err
 
         # validate is file
-        if not os.path.isfile(full_path):
-            return f'Error: File not found or is not a regular file: "{file_path}"'
+        err = validate_is_file(working_directory, file_path)
+        if err:
+            return err
         
         with open(full_path) as f:
-            # always truncate at max_chars length
-            file_content_string = f.read(MAX_CHARS)
+            # always truncate at max_chars +1 to avoid reading whole file in
+            file_content_string = f.read(MAX_CHARS + 1)
             if len(file_content_string) > MAX_CHARS:
-                file_content_string += f'[...File "{file_path}" truncated at {MAX_CHARS} characters]'
+                file_content_string[:MAX_CHARS] += f'[...File "{file_path}" truncated at {MAX_CHARS} characters]'
             return file_content_string
     except Exception as e:
         return f"Error: {e}"
