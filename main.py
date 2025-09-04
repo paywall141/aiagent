@@ -37,23 +37,50 @@ def print_verbose(prompt, res):
 
 
 def run_prompt(user_prompt):
+    # messages is a list of genai.types.Content
     messages = [
         types.Content(role="user", parts=[types.Part(text=user_prompt)]),
     ]
-    response = client.models.generate_content(
-        model ='gemini-2.0-flash-001', 
-        contents = messages,
-        config=types.GenerateContentConfig(
-            tools=[available_functions], system_instruction=system_prompt
-        ),
-    )
-    # this is where the ai executes function calls
+
+    try:
+        response = client.models.generate_content(
+            model ='gemini-2.0-flash-001', 
+            contents = messages,
+            config=types.GenerateContentConfig(
+                tools=[available_functions], system_instruction=system_prompt
+            ),
+        )
+    except Exception as e:
+        print(f"Error generating content/initial response: {e}")
+        response = None
+
+    # add candidates to messages list for NEXT conversation (call to generate_content)
+    if response:
+        #  genai.types.Candidate
+        for candidate in response.candidates:
+            messages.append(candidate.content)
+
+    # A model response may request multiple tool/function calls in one turn.  
+    # This is where the ai executes function calls of type  genai.types.FunctionCall
     for call in response.function_calls or []:
+
+        # each call returns of type genai.types.GenerateContentResponse 
         result_content = call_function( call, verbose = verbose_flag() )
+
         try:
+            # Extract the function output
             func_response = result_content.parts[0].function_response.response
+
+            # append output to messages to build context
+            messages.append( types.Content(
+                role="user",
+                parts=[types.Part.from_function_response(func_response)]
+                ))
         except AttributeError:
             raise RuntimeError(f"Fatal: call_function did not return a valid types.Content for {call.name}")
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+
         print(f"Function {call.name} returned: {func_response}")
 
     print_verbose(user_prompt, response)

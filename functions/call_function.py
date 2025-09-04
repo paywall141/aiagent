@@ -17,10 +17,12 @@ def call_function(function_call_part, verbose=False):
     
     function_name = function_call_part.name
     function_args = function_call_part.args or {}
+
+    # hard code working_directory so ai can only operate in calculator directory
     function_args["working_directory"] = "./calculator"
 
     if verbose:
-        print(f"Calling function: {function_name}({function_args})")
+        print(f"Calling function w/ verbose: {function_name}({function_args})")
     else:
         print(f" - Calling function: {function_name}")
 
