@@ -22,9 +22,9 @@ def call_function(function_call_part, verbose=False):
     function_args["working_directory"] = "./calculator"
 
     if verbose:
-        print(f"Calling function w/ verbose: {function_name}({function_args})")
+        print(f"\nCalling function w/ verbose: {function_name}({function_args})")
     else:
-        print(f" - Calling function: {function_name}")
+        print(f"\n - Calling function: {function_name}")
 
     func = FUNCTIONS.get(function_name)
     if not func:

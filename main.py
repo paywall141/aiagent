@@ -24,8 +24,12 @@ When a user asks a question or makes a request, make a function call plan. You c
 - Execute Python files with optional arguments
 - Write or overwrite files
 
+Your summaries should be concise and high-level.
 All paths you provide should be relative to the working directory. You do not need to specify the working directory in your function calls as it is automatically injected for security reasons.
 """
+total_prompt = 0
+total_response = 0
+
 def verbose_flag():
     return "--verbose" in sys.argv[2:]
 
@@ -34,6 +38,7 @@ def print_verbose(prompt, res):
         print(f"User prompt: {prompt}")
         print(f"Prompt tokens: {res.usage_metadata.prompt_token_count}")
         print(f"Response tokens: {res.usage_metadata.candidates_token_count}")
+        print(f"Totals burned: Prompt={total_prompt} Response={total_response}")
 
 
 def run_prompt(user_prompt):
@@ -41,54 +46,78 @@ def run_prompt(user_prompt):
     messages = [
         types.Content(role="user", parts=[types.Part(text=user_prompt)]),
     ]
+    total_prompt = 0
+    total_response = 0
+    seen_texts = set()  
 
-    try:
-        response = client.models.generate_content(
-            model ='gemini-2.0-flash-001', 
-            contents = messages,
-            config=types.GenerateContentConfig(
-                tools=[available_functions], system_instruction=system_prompt
-            ),
-        )
-    except Exception as e:
-        print(f"Error generating content/initial response: {e}")
-        response = None
+    for i in range(20):
+        # generate_content loop
+        try:
+            print(f"Generating new content for loop iter: {i+1}")
+            response = client.models.generate_content(
+                model ='gemini-2.0-flash-001', 
+                contents = messages,
+                config=types.GenerateContentConfig(
+                    tools=[available_functions], system_instruction=system_prompt
+                ),
+            )
+        except Exception as e:
+            print(f"Error generating content/initial response: {e}")
+            response = None
 
-    # add candidates to messages list for NEXT conversation (call to generate_content)
-    if response:
+        # check for response as exit condition
+        if not response:
+            return
+        if response.text and response.text.strip():
+            print(f"Final response: {response.text}")
+            return
+        # optional: break if no further actions
+        if not response.function_calls:
+            print("No more function calls. Exiting loop.")
+            return       
+
+        # add candidates to messages list for NEXT conversation (call to generate_content)
         #  genai.types.Candidate
         for candidate in response.candidates:
-            messages.append(candidate.content)
+            text_parts = "".join(p.text for p in candidate.content.parts if p.text)
+            if text_parts.strip() and text_parts not in seen_texts:
+                print("\n *** Adding Candidate text to messages:", {text_parts})
+                messages.append(candidate.content)
+                seen_texts.add(text_parts)
 
-    # A model response may request multiple tool/function calls in one turn.  
-    # This is where the ai executes function calls of type  genai.types.FunctionCall
-    for call in response.function_calls or []:
 
-        # each call returns of type genai.types.GenerateContentResponse 
-        result_content = call_function( call, verbose = verbose_flag() )
+        # A model response may request multiple tool/function calls in one turn.  
+        # This is where the ai executes function calls of type  genai.types.FunctionCall
+        for call in response.function_calls or []:
 
-        try:
-            # Extract the function output
-            func_response = result_content.parts[0].function_response.response
+            # each call returns of type genai.types.GenerateContentResponse 
+            result_content = call_function( call, verbose = verbose_flag() )
 
-            # append output to messages to build context
-            messages.append( types.Content(
-                role="user",
-                parts=[types.Part.from_function_response(func_response)]
-                ))
-        except AttributeError:
-            raise RuntimeError(f"Fatal: call_function did not return a valid types.Content for {call.name}")
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+            try:
+                # Extract the function output
+                func_response = result_content.parts[0].function_response.response
 
-        print(f"Function {call.name} returned: {func_response}")
+                # append output to messages to build context
+                messages.append( types.Content(
+                    role="user",
+                    parts=[types.Part.from_function_response(
+                        name = call.name,
+                        response = func_response)]
+                    ))
+            except AttributeError:
+                raise RuntimeError(f"Fatal: call_function did not return a valid types.Content for {call.name}")
+            except Exception as e:
+                print(f"An unexpected error occurred: {e}")
 
-    print_verbose(user_prompt, response)
+            # this is most of the print noise
+            # print(f"Function {call.name} returned: {func_response}")   
+        total_prompt += response.usage_metadata.prompt_token_count
+        total_response += response.usage_metadata.candidates_token_count
+        print_verbose(user_prompt, response)
 
 
 def main():
     user_prompt = sys.argv[1]
-    print(f"current prompt is: {user_prompt}")
     run_prompt(user_prompt)
 
 
