@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from helpers.tools import available_functions
+from functions.call_function import call_function
 
 load_dotenv()
 api_key = os.environ.get("GEMINI_API_KEY")
@@ -46,9 +47,15 @@ def run_prompt(user_prompt):
             tools=[available_functions], system_instruction=system_prompt
         ),
     )
-    # print(response.text)
-    for call in response.function_calls:
-        print(f"Calling function: {call.name}({call.args})")
+    # this is where the ai executes function calls
+    for call in response.function_calls or []:
+        result_content = call_function( call, verbose = verbose_flag() )
+        try:
+            func_response = result_content.parts[0].function_response.response
+        except AttributeError:
+            raise RuntimeError(f"Fatal: call_function did not return a valid types.Content for {call.name}")
+        print(f"Function {call.name} returned: {func_response}")
+
     print_verbose(user_prompt, response)
 
 

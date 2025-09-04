@@ -35,7 +35,9 @@ def call_function(function_call_part, verbose=False):
                 )
             ],
         )
+    # main function call with **kwargs
     result = func(**function_args)
+
     return types.Content(
         role="tool",
         parts=[
