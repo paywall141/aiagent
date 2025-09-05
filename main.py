@@ -5,6 +5,7 @@ from google import genai
 from google.genai import types
 from helpers.tools import available_functions
 from functions.call_function import call_function
+from config import system_prompt
 
 load_dotenv()
 api_key = os.environ.get("GEMINI_API_KEY")
@@ -14,19 +15,7 @@ if len(sys.argv) < 2 :
     print("No prompt provided. Exiting with code 1")
     sys.exit(1)
 
-system_prompt = """
-You are a helpful AI coding agent.
-
-When a user asks a question or makes a request, make a function call plan. You can perform the following operations:
-
-- List files and directories
-- Read file contents
-- Execute Python files with optional arguments
-- Write or overwrite files
-
-Your summaries should be concise and high-level.
-All paths you provide should be relative to the working directory. You do not need to specify the working directory in your function calls as it is automatically injected for security reasons.
-"""
+system_prompt = system_prompt
 total_prompt = 0
 total_response = 0
 
@@ -46,9 +35,19 @@ def run_prompt(user_prompt):
     messages = [
         types.Content(role="user", parts=[types.Part(text=user_prompt)]),
     ]
-    total_prompt = 0
-    total_response = 0
+    global total_prompt, total_response
     seen_texts = set()  
+
+    def extract_text(resp):
+        texts = []
+        for cand in resp.candidates:
+            for part in cand.content.parts:
+                if part.text:
+                    texts.append(part.text)
+        return "".join(texts).strip()
+
+    def extract_text_from_candidate(candidate):
+        return "".join(p.text for p in candidate.content.parts if p.text).strip()
 
     for i in range(20):
         # generate_content loop
@@ -67,10 +66,13 @@ def run_prompt(user_prompt):
 
         # check for response as exit condition
         if not response:
+            print( "no response found, exiting")
             return
-        if response.text and response.text.strip():
-            print(f"Final response: {response.text}")
-            return
+        # Safely grab text (instead of response.text, which triggers warnings)
+        text_out = extract_text(response)
+        if text_out and not response.function_calls:
+            print(f"Final response: {text_out}")
+            break
         # optional: break if no further actions
         if not response.function_calls:
             print("No more function calls. Exiting loop.")
@@ -79,11 +81,10 @@ def run_prompt(user_prompt):
         # add candidates to messages list for NEXT conversation (call to generate_content)
         #  genai.types.Candidate
         for candidate in response.candidates:
-            text_parts = "".join(p.text for p in candidate.content.parts if p.text)
-            if text_parts.strip() and text_parts not in seen_texts:
-                print("\n *** Adding Candidate text to messages:", {text_parts})
-                messages.append(candidate.content)
-                seen_texts.add(text_parts)
+            text_parts = extract_text_from_candidate(candidate)
+            print("\n *** Adding Candidate text to messages:", {text_parts})
+            messages.append(candidate.content)
+            seen_texts.add(text_parts)
 
 
         # A model response may request multiple tool/function calls in one turn.  
